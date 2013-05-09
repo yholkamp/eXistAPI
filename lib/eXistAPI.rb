@@ -1,6 +1,7 @@
 require "xmlrpc/client"
 $:.unshift(".")
 require 'collection'
+require 'exist_exception'
 
 #ExistAPI is comunication interface to eXist-db based on XML-RPC. With eXistAPI 
 #you are able to create, delete or get collections or retrieve whole content of 
