@@ -39,7 +39,7 @@ class ExistAPI
 
   private
 
-  #Creates collection with name in parrent collection(optionaly)#
+  #Creates collection with name in parent collection(optionally)#
   #
   # * *Args*    :
   #   - +name+ -> the name of collection
@@ -81,7 +81,7 @@ class ExistAPI
   
   public
   
-  #Creates collection with name in parrent(optionaly)
+  #Creates collection with name in parent(optionally)
   #
   # * *Args*    :
   #   - +name+ -> the name of collection
@@ -90,7 +90,7 @@ class ExistAPI
   # * *Raises* :
   #   - +ExistException+ -> if collection is not created.
   #
-  def createcollection(name, parent_col = nil)
+  def create_collection(name, parent_col = nil)
     name = check_slashes(name)
     if (parent_col == nil)
       begin
@@ -119,7 +119,7 @@ class ExistAPI
   # * *Raises* :
   #   - +nothing+
   #
-  def getcollection(path)
+  def get_collection(path)
     path = check_slashes(path)
     col = Collection.new(@client, path)
     return col
@@ -136,7 +136,7 @@ class ExistAPI
   # * *Raises* :
   #   - +nothing+
   #
-  def existscollection?(orig_path)
+  def exists_collection?(orig_path)
     orig_path = check_slashes(orig_path)
     collections = orig_path.split("/")
     collections.delete("")
@@ -198,7 +198,7 @@ class ExistAPI
   # * *Raises* :
   #   - +ExistException+ -> Resource or document name is nil
   #   - +ExistException+ -> Failed to store resource"
-  def storeresource(_res, _docname, _overwrite = 1)
+  def store_resource(_res, _docname, _overwrite = 1)
     if ((_res == nil)||(_docname == nil))
       raise ExistException.new("Resource or document name is nil", 4), caller
     end
