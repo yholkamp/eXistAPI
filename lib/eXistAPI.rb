@@ -182,8 +182,8 @@ class ExistAPI
     return result
   rescue XMLRPC::FaultException => e
     raise e    
-  rescue
-    raise ExistException.new("Failed to remove Collection", 3), caller
+  rescue Exception => e
+    raise ExistException.new("Failed to remove collection: #{e}", 3), caller
   end
   
   #Stores resource to document in db.
@@ -208,9 +208,20 @@ class ExistAPI
       raise e    
     rescue ExistException => e
       raise e
-    rescue
-      raise ExistException.new("Failed to store resource", 5), caller
+    rescue Exception => e
+      raise ExistException.new("Failed to store resource: #{e}", 5), caller
     end
+  end
+
+
+  # Removes a specified resource from the database.
+  def remove_resource(filepath)
+    result = @client.call("remove", filepath)
+    return result
+  rescue XMLRPC::FaultException => e
+    raise e
+  rescue Exception => e
+    raise ExistException.new("Failed to remove resource: #{e}", 9), caller
   end
   
   #Executes an XQuery and returns a reference identifier to the generated result set. This reference can be used later to retrieve results.
