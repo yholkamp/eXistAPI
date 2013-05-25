@@ -15,7 +15,7 @@ require 'exist_exception'
 #db = ExistAPI.new("http://localhost:8080/exist/xmlrpc", "admin", "admin")
 #puts db.existscollection?("db")
 class ExistAPI
-  
+
   #Create new instance of ExistAPI.
   #
   #example ExistAPI.new("http://localhost:8080/exist/xmlrpc", "admin", "password")    
@@ -29,11 +29,11 @@ class ExistAPI
   # * *Raises* :
   #   - +ExistException+ -> Database login failed
   #
-  def initialize(uri = nil , username = nil, password = nil)
+  def initialize(uri = nil, username = nil, password = nil)
     @uri = uri
     @username = username
     @password = password
-    @parameters = { "encoding" => "UTF-8", "indent" => "yes"}
+    @parameters = {"encoding" => "UTF-8", "indent" => "yes"}
     connect
   end
 
@@ -52,13 +52,13 @@ class ExistAPI
     @client = XMLRPC::Client.new2(@uri)
     @client.user=(@username)
     @client.password=(@password)
-    @client.call("isXACMLEnabled")  #test if the connection is established.
+    @client.call("isXACMLEnabled") #test if the connection is established.
   rescue XMLRPC::FaultException => e
-    raise e    
+    raise e
   rescue
     raise ExistException.new("Database login failed", 1), caller
   end
-  
+
   #Checks if path starts and ends with "/". If not, adds "/".
   #
   # * *Args*    :
@@ -69,18 +69,18 @@ class ExistAPI
   #   - +ArgumentError+ -> if any value is nil or negative
   #
   def check_slashes(path)
-    if(path[0] != "/")
+    if (path[0] != "/")
       path = "/" + path
     end
-    if(path[-1] != "/")    #if last is not "/" then add it
+    if (path[-1] != "/") #if last is not "/" then add it
       path += "/"
     end
     return path
   end
-  
-  
+
+
   public
-  
+
   #Creates collection with name in parent(optionally)
   #
   # * *Args*    :
@@ -105,11 +105,11 @@ class ExistAPI
       end
     end
   rescue XMLRPC::FaultException => e
-    raise e    
+    raise e
   rescue
     raise ExistException.new("Failed to create Collection", 2), caller
   end
-  
+
   #Returns Collection at specified path.
   #
   # * *Args*    :
@@ -123,10 +123,10 @@ class ExistAPI
     path = check_slashes(path)
     col = Collection.new(@client, path)
     return col
-  rescue  => e
-    raise e  
+  rescue => e
+    raise e
   end
-  
+
   #Checks if collection with path exists or not.
   #
   # * *Args*    :
@@ -141,8 +141,8 @@ class ExistAPI
     collections = orig_path.split("/")
     collections.delete("")
     i=0
-    path = "/" 
-    while(i < collections.length)
+    path = "/"
+    while (i < collections.length)
       path = path + collections[i] + "/"
       col = Collection.new(@client, path)
       if (!col.childCollection.include?(collections[i+1]))
@@ -150,24 +150,24 @@ class ExistAPI
       end
       i = i + 1
     end
-    
-    if(path[-1]=="/")
+
+    if (path[-1]=="/")
       path = path[0..-2]
     end
-    if(orig_path[-1]=="/")
+    if (orig_path[-1]=="/")
       orig_path = orig_path[0..-2]
     end
-    
-    if(path == orig_path)
+
+    if (path == orig_path)
       return true
     else
       return false
     end
-  rescue  => e
-    raise e  
+  rescue => e
+    raise e
   end
 
-  
+
   #Removes collection with specified path.
   #
   # * *Args*    :
@@ -181,11 +181,11 @@ class ExistAPI
     result = @client.call("removeCollection", path)
     return result
   rescue XMLRPC::FaultException => e
-    raise e    
+    raise e
   rescue
     raise ExistException.new("Failed to remove Collection", 3), caller
   end
-  
+
   #Stores resource to document in db.
   #Inserts a new document into the database or replace an existing one:
   #
@@ -203,16 +203,16 @@ class ExistAPI
       raise ExistException.new("Resource or document name is nil", 4), caller
     end
     begin
-      @client.call("parse",_res.to_s, _docname, _overwrite)
+      @client.call("parse", _res.to_s, _docname, _overwrite)
     rescue XMLRPC::FaultException => e
-      raise e    
+      raise e
     rescue ExistException => e
       raise e
     rescue
       raise ExistException.new("Failed to store resource", 5), caller
     end
   end
-  
+
   #Executes an XQuery and returns a reference identifier to the generated result set. This reference can be used later to retrieve results.
   #
   # * *Args*    :
@@ -229,18 +229,23 @@ class ExistAPI
   # * *Raises* :
   #   - +ExistException+ -> Failed to execute query
   #
-  def execute_query(xquery, parameters = @parameters)
-    #puts xquery
+  def execute_query(query, parameters = @parameters, retr = 1)
     begin
-      handle = @client.call("executeQuery", XMLRPC::Base64.new(xquery), parameters)
+      handle = @client.call("executeQuery", XMLRPC::Base64.new(query), parameters)
       return handle
     rescue XMLRPC::FaultException => e
-      raise e    
-    rescue
-      raise ExistException.new("Failed to execute query", 6), caller
+      raise e
+    rescue EOFError => e
+      if retr > 0
+        execute_query(query, parameters, retr-1)
+      else
+        raise ExistException.new("Failed to execute query, connection timed out", 6), caller
+      end
+    rescue Exception => e
+      raise ExistException.new("Failed to execute query: #{e.class}", 6), caller
     end
   end
-  
+
   #Retrieves a single result-fragment from the result-set referenced by resultId. 
   #The result-fragment is identified by its position in the result-set, which is passed in the parameter pos.
   #
@@ -258,12 +263,12 @@ class ExistAPI
       res = @client.call("retrieve", handle, pos, @parameters)
       return res
     rescue XMLRPC::FaultException => e
-      raise e   
+      raise e
     rescue
       raise ExistException.new("Failed to retrive resource", 7), caller
     end
   end
-  
+
   #Get the number of hits in the result-set identified by resultId.
   #example: gethits(handle_id)
   #
@@ -285,7 +290,7 @@ class ExistAPI
       raise ExistException.new("Failed to get number of hits", 8), caller
     end
   end
-  
+
   #Inserts the content sequence specified in expr into the element node passed 
   #via exprSingle. exprSingle and expr should evaluate to a node set. 
   #If exprSingle contains more than one element node, the modification will be 
@@ -304,14 +309,14 @@ class ExistAPI
   #   -int handle of query
   # * *Raises* :
   #   - +nothing+
-  def update_insert(expr, pos, expr_single) 
+  def update_insert(expr, pos, expr_single)
     query = "update insert "+expr+" "+pos+" "+expr_single
     #puts "query #{query}"
     execute_query(query)
-  rescue  => e
-    raise e    
+  rescue => e
+    raise e
   end
-  
+
   #Replaces the nodes returned by expr with the nodes in exprSingle. 
   #expr may evaluate to a single element, attribute or text node. 
   #If it is an element, exprSingle should contain a single element node as well. 
@@ -329,10 +334,10 @@ class ExistAPI
   def update_replace(expr, expr_single)
     query = "update replace "+expr+" with "+expr_single
     execute_query(query)
-  rescue  => e
-    raise e  
+  rescue => e
+    raise e
   end
-  
+
   #Updates the content of all nodes in expr with the items in exprSingle. 
   #If expr is an attribute or text node, its value will be set to the 
   #concatenated string value of all items in exprSingle.
@@ -348,10 +353,10 @@ class ExistAPI
   def update_value(expr, expr_single)
     query = "update replace " + expr + " with " + expr_single
     execute_query(query)
-  rescue  => e
-    raise e  
+  rescue => e
+    raise e
   end
-  
+
   #Removes all nodes in expr from their document.
   #
   # * *Args*    :
@@ -365,10 +370,10 @@ class ExistAPI
     query = "update delete " + expr
     #puts "query #{query}"
     execute_query(query)
-  rescue  => e
-    raise e  
+  rescue => e
+    raise e
   end
-  
+
   #Renames the nodes in expr using the string value of the first item in 
   #exprSingle as the new name of the node. expr should evaluate to a set of 
   #elements or attributes.
@@ -385,7 +390,7 @@ class ExistAPI
     query = "update rename " + expr + " as " + expr_single
     #puts "query #{query}"
     execute_query(query)
-  rescue  => e
-    raise e  
+  rescue => e
+    raise e
   end
 end
